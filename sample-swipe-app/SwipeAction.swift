@@ -28,6 +28,7 @@ struct SwipeAction<Content: View>: View {
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 0) {
                     content
+                        .rotationEffect(.init(degrees: direction == .leading ? 180 : 0))
                         .containerRelativeFrame(.horizontal)
                         .background(colorScheme == .dark ? .black : .white)
                         .background {
@@ -75,6 +76,7 @@ struct SwipeAction<Content: View>: View {
                 }
             }
             .clipShape(.rect(cornerRadius: cornerRadius))
+            .rotationEffect(.init(degrees: direction == .leading ? 180 : 0))
         }
         .allowsHitTesting(isEnabled)
         .transition(SwipeActionCustomTransition())
@@ -107,7 +109,7 @@ struct SwipeAction<Content: View>: View {
                         }
                         .buttonStyle(.plain)
                         .background(button.tint)
-
+                        .rotationEffect(.init(degrees: direction == .leading ? 180 : 0))
                     }
                 }
             }
@@ -116,7 +118,7 @@ struct SwipeAction<Content: View>: View {
     nonisolated func scrollOfSet(_ proxy: GeometryProxy) -> CGFloat {
         let minX = proxy.frame(in: .scrollView(axis: .horizontal)).minX
         
-        return direction == .trailing ? (minX > 0 ? -minX : 0) : (minX < 0 ? -minX : 0)
+        return minX > 0 ? -minX : 0
     }
     
 }

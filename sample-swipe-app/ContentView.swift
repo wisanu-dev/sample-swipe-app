@@ -24,7 +24,7 @@ struct ContentView: View {
                 LazyVStack(spacing: 8) {
                     ForEach(colors, id: \.self) { color in
                         if #available(iOS 17.0, *) {
-                            SwipeAction(cornerRadius: 8, direction: .trailing) {
+                            SwipeAction(cornerRadius: 8, direction: .leading) {
                                 cardView(color)
                             } actions: {
                                 
