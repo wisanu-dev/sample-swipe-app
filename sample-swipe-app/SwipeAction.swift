@@ -15,13 +15,19 @@ struct SwipeAction<Content: View>: View {
     
     var cornerRadius: CGFloat = 0
     var direction: SwipeDirection = .trailing
+    @Binding var isActive: Bool
+    @Binding var isResetPosition: Bool
     
     @ViewBuilder var content: Content
+    
+    
     @SwipeActionBuilder var actions: [SwipeActionModel]
     
     let viewID = UUID()
     @State private var isEnabled: Bool = true
     @State private var scrollOffset: CGFloat = .zero
+    
+    
     
     var body: some View {
         ScrollViewReader { proxy in
@@ -60,10 +66,23 @@ struct SwipeAction<Content: View>: View {
                         }
                     }
                     .opacity(scrollOffset == .zero ? 0 : 1)
+                    .onChange(of: isResetPosition) { oldValue, newValue in
+                        if oldValue != newValue, newValue {
+                            Task {
+                                try? await Task.sleep(for: .seconds(0.15))
+                                withAnimation(.snappy) {
+                                    proxy.scrollTo(
+                                        viewID,
+                                        anchor: direction == .trailing ? .topLeading : .topTrailing
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 .scrollTargetLayout()
                 .visualEffect { content, geometry in
-                    content.offset(x: scrollOfSet(geometry))
+                    content.offset(x: scrollOffSet(geometry))
                 }
             }
             .scrollIndicators(.hidden)
@@ -80,6 +99,9 @@ struct SwipeAction<Content: View>: View {
         }
         .allowsHitTesting(isEnabled)
         .transition(SwipeActionCustomTransition())
+        .onChange(of: scrollOffset) { oldValue, newValue in
+            isActive = newValue < 0
+        }
     }
     
     @ViewBuilder
@@ -115,7 +137,7 @@ struct SwipeAction<Content: View>: View {
             }
     }
     
-    nonisolated func scrollOfSet(_ proxy: GeometryProxy) -> CGFloat {
+    nonisolated func scrollOffSet(_ proxy: GeometryProxy) -> CGFloat {
         let minX = proxy.frame(in: .scrollView(axis: .horizontal)).minX
         
         return minX > 0 ? -minX : 0
@@ -176,6 +198,6 @@ struct SwipeActionBuilder {
 }
 
 #Preview {
-    ContentView()
+    ContentView(direction: .trailing)
 }
 

@@ -18,13 +18,35 @@ struct ContentView: View {
         .pink, .red, .orange, .blue, .green, .gray
     ]
     
+    @State var direction: SwipeDirection = .trailing
+    @State var activeIndex: Int?
+    
     var body: some View {
         NavigationStack {
             ScrollView(.vertical) {
                 LazyVStack(spacing: 8) {
                     ForEach(colors, id: \.self) { color in
+                        
+                        let index = colors.firstIndex(of: color) ?? 0
+                        
                         if #available(iOS 17.0, *) {
-                            SwipeAction(cornerRadius: 8, direction: .leading) {
+                            SwipeAction(
+                                cornerRadius: 8,
+                                direction: direction,
+                                isActive: Binding(
+                                    get: {
+                                        activeIndex == index
+                                    }, set: { isActive in
+//                                        guard isActive else { return }
+                                        self.activeIndex = index
+                                    }
+                                ),
+                                isResetPosition: Binding(
+                                    get: {
+                                        activeIndex != index
+                                    }, set: { _ in }
+                                )
+                            ) {
                                 cardView(color)
                             } actions: {
                                 
@@ -44,6 +66,9 @@ struct ContentView: View {
                 .padding(16)
             }
             .navigationTitle("Swipe Action")
+        }
+        .onChange(of: activeIndex) { oldValue, newValue in
+            debugPrint("oldValue: \(oldValue), newValue: \(newValue)")
         }
     }
     
