@@ -23,6 +23,11 @@ struct ContentView: View {
     
     var body: some View {
         NavigationStack {
+            
+            Button("Reset") {
+                activeIndex = 0
+            }
+            
             ScrollView(.vertical) {
                 LazyVStack(spacing: 8) {
                     ForEach(colors, id: \.self) { color in
@@ -31,21 +36,10 @@ struct ContentView: View {
                         
                         if #available(iOS 17.0, *) {
                             SwipeAction(
+                                itemIndex: index,
                                 cornerRadius: 8,
                                 direction: direction,
-                                isActive: Binding(
-                                    get: {
-                                        activeIndex == index
-                                    }, set: { isActive in
-//                                        guard isActive else { return }
-                                        self.activeIndex = index
-                                    }
-                                ),
-                                isResetPosition: Binding(
-                                    get: {
-                                        activeIndex != index
-                                    }, set: { _ in }
-                                )
+                                activeIndex: $activeIndex
                             ) {
                                 cardView(color)
                             } actions: {
@@ -67,9 +61,10 @@ struct ContentView: View {
             }
             .navigationTitle("Swipe Action")
         }
-        .onChange(of: activeIndex) { oldValue, newValue in
-            debugPrint("oldValue: \(oldValue), newValue: \(newValue)")
-        }
+//        .onChange(of: activeIndex) { oldValue, newValue in
+//            debugPrint("ActiveIndex Changed: old \(oldValue), new \(newValue)")
+//            inactiveIndex = oldValue
+//        }
     }
     
     @ViewBuilder

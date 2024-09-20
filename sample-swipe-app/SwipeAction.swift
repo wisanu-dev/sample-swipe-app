@@ -13,21 +13,19 @@ struct SwipeAction<Content: View>: View {
     
     @Environment(\.colorScheme) private var colorScheme
     
+    var itemIndex: Int = 0
     var cornerRadius: CGFloat = 0
     var direction: SwipeDirection = .trailing
-    @Binding var isActive: Bool
-    @Binding var isResetPosition: Bool
+    @Binding var activeIndex: Int?
     
     @ViewBuilder var content: Content
-    
     
     @SwipeActionBuilder var actions: [SwipeActionModel]
     
     let viewID = UUID()
     @State private var isEnabled: Bool = true
     @State private var scrollOffset: CGFloat = .zero
-    
-    
+    @State private var swipeActionState: SwipeActionState = .inactivating
     
     var body: some View {
         ScrollViewReader { proxy in
@@ -66,16 +64,15 @@ struct SwipeAction<Content: View>: View {
                         }
                     }
                     .opacity(scrollOffset == .zero ? 0 : 1)
-                    .onChange(of: isResetPosition) { oldValue, newValue in
-                        if oldValue != newValue, newValue {
-                            Task {
-                                try? await Task.sleep(for: .seconds(0.15))
-                                withAnimation(.snappy) {
-                                    proxy.scrollTo(
-                                        viewID,
-                                        anchor: direction == .trailing ? .topLeading : .topTrailing
-                                    )
-                                }
+                }
+                .onChange(of: activeIndex) { _, newValue in
+                    if activeIndex != itemIndex {
+                        Task {
+                            withAnimation(.snappy) {
+                                proxy.scrollTo(
+                                    viewID,
+                                    anchor: direction == .trailing ? .topLeading : .topTrailing
+                                )
                             }
                         }
                     }
@@ -100,7 +97,17 @@ struct SwipeAction<Content: View>: View {
         .allowsHitTesting(isEnabled)
         .transition(SwipeActionCustomTransition())
         .onChange(of: scrollOffset) { oldValue, newValue in
-            isActive = newValue < 0
+            swipeActionState = SwipeActionState.initialState(
+                oldScrollOffset: oldValue,
+                newScrollOffset: newValue,
+                limit: -(CGFloat(actions.count) * 100)
+            )
+        }
+        .onChange(of: swipeActionState) { oldValue, newValue in
+            debugPrint("index \(itemIndex), old: \(oldValue), new: \(newValue)")
+            if newValue == .activating {
+                activeIndex = itemIndex
+            }
         }
     }
     
@@ -165,6 +172,19 @@ struct SwipeActionCustomTransition: Transition {
                 }
                 .containerRelativeFrame(.horizontal)
             }
+    }
+}
+
+enum SwipeActionState {
+    case activating
+    case inactivating
+    
+    static func initialState(oldScrollOffset: CGFloat, newScrollOffset: CGFloat, limit: CGFloat) -> Self {
+        if newScrollOffset <= limit || oldScrollOffset > newScrollOffset {
+            return .activating
+        } else {
+            return .inactivating
+        }
     }
 }
 
